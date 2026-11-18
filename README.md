@@ -8,6 +8,12 @@ properly formatted daily, weekly and monthly reports you can export to Word.
 
 ## What it does
 
+### Dashboard
+The home screen shows how your week is going at a glance:
+- **Entries logged this week**, compared with last week
+- Cards for **this month**, **today** and your **streak**
+- Widgets for **metrics this week**, **entries per day**, **team deployment** (completion rates), **last 30 days**, **blockers** and **recent notes**
+
 ### Daily reports
 - **Ctrl+D** opens today's report. It is created automatically and dated for you.
 - **Quick log:** type what you just did and press **Enter**. It is filed under the current time.
@@ -15,7 +21,8 @@ properly formatted daily, weekly and monthly reports you can export to Word.
   - `INCIDENT LOG - went through pending incidents` gives you a **bold label** followed by the text
   - indent with **Tab** or start a line with `-` to make a sub-point, or start it with `1.` for a numbered sub-point
 - **Field stats** (installations, LOS, pending incidents…) and **team deployment** with completion rates worked out for you.
-- **Blockers**, **next day's plan** and a **submitted by** line.
+- **Blockers**, **next day's plan**, plus **Submitted by** and **Submitted to** lines (set your supervisor once in Settings).
+- Live summary cards at the top of each report: entries, top metric and team completion.
 - Yesterday's plan is carried over to today, along with your metrics and team names.
 - **Export:** Word (.docx), PDF/print, or **Copy text** to paste into WhatsApp or email.
 

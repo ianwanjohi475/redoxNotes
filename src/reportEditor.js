@@ -2,6 +2,7 @@
 // "log it now" quick entry, field stats, team deployment, blockers, plan.
 import { icon } from './icons.js';
 import { escHtml, fmtClock, fmtLong, fmtReportTime, nowHM, uid } from './util.js';
+import { parseLines } from './report.js';
 
 const autosize = (ta) => { ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 2 + 'px'; };
 
@@ -18,7 +19,48 @@ export class ReportEditor {
 
   destroy() { clearInterval(this.clock); }
 
-  changed() { this.onChange(); }
+  changed() { this.onChange(); this.updateSummarySoon(); }
+
+  updateSummarySoon() {
+    clearTimeout(this._st);
+    this._st = setTimeout(() => this.updateSummary(), 250);
+  }
+
+  updateSummary() {
+    const el = this.host.querySelector('.rep-summary');
+    if (!el) return;
+    const r = this.r;
+    const items = r.blocks.reduce((a, b) => a + parseLines(b.text).length, 0);
+    const times = r.blocks.flatMap((b) => [b.start, b.end]).filter(Boolean).sort();
+    const span = times.length ? `${fmtReportTime(times[0])} – ${times.length > 1 ? fmtReportTime(times[times.length - 1]) : 'now'}` : 'Not started';
+    const n = (v) => { const x = parseFloat(String(v).replace(/,/g, '')); return Number.isFinite(x) ? x : 0; };
+    const asg = r.teams.reduce((a, t) => a + n(t.assigned), 0);
+    const done = r.teams.reduce((a, t) => a + n(t.completed), 0);
+    const rate = asg ? Math.round((done / asg) * 100) : null;
+    const blockers = String(r.blockers || '').split('\n').filter((l) => l.trim()).length;
+    const top = r.stats.filter((s) => String(s.value).trim() && n(s.value)).sort((a, b) => n(b.value) - n(a.value))[0];
+    el.innerHTML = `
+      <div class="sum-hero">
+        <div class="hero-label">Activities logged</div>
+        <div class="hero-num">${items}<span class="unit">${items === 1 ? 'entry' : 'entries'}</span>
+          <span class="pill-accent">${r.blocks.length} time block${r.blocks.length === 1 ? '' : 's'}</span>
+          ${blockers ? `<span class="pill-accent soft">${blockers} blocker${blockers === 1 ? '' : 's'}</span>` : ''}
+        </div>
+        <div class="hero-sub">${escHtml(span)}${r.submittedTo ? ` · Submitted to <b>${escHtml(r.submittedTo)}</b>` : ''}</div>
+      </div>
+      <div class="hero-cards">
+        <div class="mini-card">
+          <span class="mc-label">Top metric</span>
+          <span class="mc-num">${top ? escHtml(top.value) : '–'}</span>
+          <span class="mc-foot"><span class="ellipsis">${top ? escHtml(top.label) : 'Fill in field stats'}</span></span>
+        </div>
+        <div class="mini-card dark">
+          <span class="mc-label">Team completion</span>
+          <span class="mc-num">${rate == null ? '–' : rate + '%'}</span>
+          <span class="mc-foot">${asg ? `${done} of ${asg} tickets` : 'No tickets yet'}</span>
+        </div>
+      </div>`;
+  }
 
   render(focusSel) {
     const r = this.r;
@@ -35,8 +77,10 @@ export class ReportEditor {
           <label class="date-pick" title="Change the date of this report">${icon('calendar', 16)}<input type="date" data-k="date" value="${this.doc.date}"></label>
         </div>
 
+        <div class="rep-summary"></div>
+
         <details class="rep-head card" ${detailsOpen ? 'open' : ''}>
-          <summary>${icon('report', 16)}<span>Report header</span><span class="muted sum-line">${escHtml([h.company, h.name, h.branch, h.shift && 'Shift ' + h.shift].filter(Boolean).join(' · ') || 'Company, name, branch, shift')}</span></summary>
+          <summary>${icon('report', 16)}<span>Report header</span><span class="muted sum-line">${escHtml([h.company, h.name, h.branch, h.shift && 'Shift ' + h.shift, r.submittedTo && 'To ' + r.submittedTo].filter(Boolean).join(' · ') || 'Company, name, branch, shift, submitted to')}</span></summary>
           <div class="grid2">
             <label>Report title<input data-h="company" value="${escHtml(h.company)}" placeholder="e.g. VTL DAILY REPORT"></label>
             <label>Subtitle<input data-h="subtitle" value="${escHtml(h.subtitle)}" placeholder="DAILY WORK REPORT"></label>
@@ -44,6 +88,7 @@ export class ReportEditor {
             <label>Branch / Department<input data-h="branch" value="${escHtml(h.branch)}" placeholder="e.g. Kakamega Branch"></label>
             <label>Shift<input data-h="shift" value="${escHtml(h.shift)}" placeholder="e.g. 8AM to 4PM"></label>
             <label>Submitted by<input data-k="submittedBy" value="${escHtml(r.submittedBy)}" placeholder="Name on the signature line"></label>
+            <label>Submitted to<input data-k="submittedTo" value="${escHtml(r.submittedTo || '')}" placeholder="e.g. Branch Manager / supervisor's name"></label>
           </div>
         </details>
 
@@ -90,6 +135,7 @@ export class ReportEditor {
         </section>
       </div></div>`;
     this.bind();
+    this.updateSummary();
     this.host.querySelectorAll('textarea').forEach(autosize);
     const sc = this.host.querySelector('.rep-scroll');
     sc.scrollTop = scroll;

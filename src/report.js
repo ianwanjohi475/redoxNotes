@@ -22,6 +22,7 @@ export function emptyReport(profile, prev) {
     blockers: '',
     nextPlan: '',
     submittedBy: p?.submittedBy || profile.name || ph.name || '',
+    submittedTo: p?.submittedTo || profile.submittedTo || '',
     carried: p?.nextPlan || '',
   };
 }
@@ -159,7 +160,8 @@ export function dailyDocx(doc) {
   lines.forEach((l, i) => dx.p(l, { after: i === lines.length - 1 ? 200 : 0 }));
   writeDailyBody(dx, doc);
   const by = r.submittedBy || h.name;
-  if (filled(by)) dx.p([{ text: `SUBMITTED BY | ${by.toUpperCase()}`, b: true }], { before: 360 });
+  if (filled(by)) dx.p([{ text: `SUBMITTED BY | ${by.toUpperCase()}`, b: true }], { before: 360, after: 40 });
+  if (filled(r.submittedTo)) dx.p([{ text: `SUBMITTED TO | ${r.submittedTo.toUpperCase()}`, b: true }], { before: filled(by) ? 0 : 360 });
   return dx.build();
 }
 
@@ -203,7 +205,9 @@ export function dailyText(doc) {
   if (blockers.length) { out.push('', '*BLOCKERS*'); blockers.forEach((l) => out.push(`- ${l}`)); }
   if (filled(r.nextPlan)) out.push('', "*NEXT DAY'S PLAN*", r.nextPlan.trim());
   const by = r.submittedBy || h.name;
-  if (filled(by)) out.push('', `SUBMITTED BY | ${by.toUpperCase()}`);
+  if (filled(by) || filled(r.submittedTo)) out.push('');
+  if (filled(by)) out.push(`SUBMITTED BY | ${by.toUpperCase()}`);
+  if (filled(r.submittedTo)) out.push(`SUBMITTED TO | ${r.submittedTo.toUpperCase()}`);
   return out.join('\n');
 }
 
@@ -265,6 +269,7 @@ export function dailyHtml(doc) {
   html += dailyBodyHtml(doc);
   const by = r.submittedBy || h.name;
   if (filled(by)) html += `<p class="sig"><b>SUBMITTED BY | ${escHtml(by.toUpperCase())}</b></p>`;
+  if (filled(r.submittedTo)) html += `<p class="${filled(by) ? '' : 'sig'}"><b>SUBMITTED TO | ${escHtml(r.submittedTo.toUpperCase())}</b></p>`;
   return html + '</div>';
 }
 
@@ -313,6 +318,7 @@ export function rangeDocx(reports, opts) {
   const meta = [`PERIOD: ${fmtLong(from).toUpperCase()} – ${fmtLong(to).toUpperCase()}`];
   if (filled(profile.name)) meta.push(profile.name.toUpperCase());
   if (filled(profile.branch)) meta.push(profile.branch.toUpperCase());
+  if (filled(profile.submittedTo)) meta.push(`SUBMITTED TO: ${profile.submittedTo.toUpperCase()}`);
   meta.push(`DAYS REPORTED: ${reports.length}`);
   meta.forEach((m, i) => dx.p(m, { after: i === meta.length - 1 ? 200 : 0 }));
 
@@ -363,6 +369,7 @@ export function rangeHtml(reports, opts) {
   html += `<h3 class="center">${escHtml(title.toUpperCase())}</h3><div class="meta"><div>PERIOD: ${escHtml(fmtLong(from).toUpperCase())} – ${escHtml(fmtLong(to).toUpperCase())}</div>`;
   if (filled(profile.name)) html += `<div>${escHtml(profile.name.toUpperCase())}</div>`;
   if (filled(profile.branch)) html += `<div>${escHtml(profile.branch.toUpperCase())}</div>`;
+  if (filled(profile.submittedTo)) html += `<div>SUBMITTED TO: ${escHtml(profile.submittedTo.toUpperCase())}</div>`;
   html += `<div>DAYS REPORTED: ${reports.length}</div></div>`;
   if (sum.statOrder.length) {
     html += '<h3>Summary</h3><table><thead><tr><th>Metric</th><th>Total</th></tr></thead><tbody>' + sum.statOrder.map((k) => `<tr><td>${escHtml(k)}</td><td class="c">${sum.statTotals[k]}</td></tr>`).join('') + '</tbody></table>';
@@ -400,6 +407,6 @@ export function reportSearchText(doc) {
     r.statsTitle, r.statsNote,
     ...r.stats.map((s) => `${s.label} ${s.value}`),
     ...r.teams.map((t) => `${t.name} ${t.notes}`),
-    r.blockers, r.nextPlan,
+    r.blockers, r.nextPlan, r.submittedBy, r.submittedTo,
   ].join(' \n ');
 }

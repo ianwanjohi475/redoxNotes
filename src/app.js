@@ -5,6 +5,7 @@ import * as R from './report.js';
 import { ReportEditor } from './reportEditor.js';
 import { NoteEditor, noteToDocx, noteToText, noteSearchText } from './notes.js';
 import { Board } from './whiteboard.js';
+import { dashboardHtml } from './dashboard.js';
 
 // ------------------------------------------------------------------ state
 const DEFAULT_SETTINGS = {
@@ -21,6 +22,7 @@ const DEFAULT_SETTINGS = {
     branch: '',
     shift: '8AM to 4PM',
     statsTitle: 'FIELD OPERATIONS AND INSTALLATION',
+    submittedTo: '',
     statLabels: ['Installations completed', 'Migrations', 'LOS completed', 'Pending incidents', 'Survey'],
     teams: [],
   },
@@ -222,7 +224,7 @@ function closeTab(id) {
 }
 
 function activate(id) {
-  if (S.active === id && S.editor) { renderTabs(); return; }
+  if (S.active === id && (S.editor || !id)) { if (!id) renderEditor(); renderTabs(); return; }
   flushDocs();
   S.editor?.destroy?.();
   S.editor = null;
@@ -248,9 +250,10 @@ function renderTabs() {
     if (!d) return '';
     const ic = d.type === 'report' ? 'report' : d.type === 'board' ? 'board' : 'note';
     return `<div class="tab ${id === S.active ? 'active' : ''}" data-id="${id}" title="${U.escHtml(docTitle(d))}" draggable="true">
-      <span class="tab-ic t-${d.type}">${icon(ic, 14)}</span><span class="tab-label">${U.escHtml(docTitle(d))}</span>
+      <span class="tab-ic t-${d.type}">${icon(ic, 14)}</span><span class="tab-label">${U.escHtml(d.type === 'report' ? (d.date === U.todayKey() ? 'Today' : U.fmtShort(d.date).slice(0, -5)) : docTitle(d))}</span>
       <button class="tab-x" data-close="${id}" title="Close (Ctrl+W)">${icon('x', 13)}</button></div>`;
   }).join('');
+  syncRail();
   const act = bar.querySelector('.tab.active');
   act?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   const d = S.docs.get(S.active);
@@ -259,44 +262,78 @@ function renderTabs() {
 
 // ------------------------------------------------------------------ sidebar
 function renderSidebarShell() {
+  $('#rail').innerHTML = `
+    <button class="rail-logo" data-act="home" title="Dashboard">${icon('note', 22)}</button>
+    <div class="rail-mid">
+      <button class="rail-btn" data-rail="home" data-act="home" title="Dashboard">${icon('home', 20)}</button>
+      <button class="rail-btn" data-rail="report" data-act="today" title="Today's report (Ctrl+D)">${icon('report', 20)}</button>
+      <button class="rail-btn" data-rail="note" data-filter="note" title="Notes">${icon('note', 20)}</button>
+      <button class="rail-btn" data-rail="board" data-filter="board" title="Whiteboards">${icon('board', 20)}</button>
+      <button class="rail-btn" data-act="range" title="Weekly / monthly report (Ctrl+R)">${icon('chart', 20)}</button>
+    </div>
+    <div class="rail-bottom">
+      <button class="rail-btn sm" data-act="shortcuts" title="Keyboard shortcuts (Ctrl+/)">${icon('keyboard', 18)}</button>
+      <button class="rail-btn sm" data-act="folder" title="Open data folder">${icon('folder', 18)}</button>
+      <button class="rail-btn sm" data-act="settings" title="Settings (Ctrl+,)">${icon('settings', 18)}</button>
+    </div>`;
   $('#sidebar').innerHTML = `
-    <div class="brand">
-      <div class="logo">${icon('note', 18)}</div><span>Redox Notes</span>
+    <div class="ws-head">
+      <button class="ws-name" data-act="settings" title="Your profile & report header">Redox Notes ${icon('down', 15)}</button>
       <button class="icon-btn" data-act="collapse" title="Hide sidebar (Ctrl+\\)">${icon('sidebar', 17)}</button>
     </div>
-    <button class="today-btn" data-act="today">${icon('report', 18)}<span><b>Today's report</b><small>${U.fmtLong(U.todayKey())}</small></span><kbd>Ctrl+D</kbd></button>
-    <div class="new-row">
-      <button data-act="newNote" title="New note (Ctrl+N)">${icon('note', 16)} Note</button>
-      <button data-act="newBoard" title="New whiteboard (Ctrl+Shift+N)">${icon('board', 16)} Whiteboard</button>
-      <button data-act="range" title="Weekly / monthly report (Ctrl+R)">${icon('chart', 16)} Reports</button>
-    </div>
-    <div class="search">${icon('search', 16)}<input id="search" placeholder="Search everything  (Ctrl+F)" autocomplete="off"><button class="icon-btn clear-search" title="Clear">${icon('x', 14)}</button></div>
-    <div id="calendar" class="calendar"></div>
-    <div class="filters">${[['all', 'All'], ['report', 'Reports'], ['note', 'Notes'], ['board', 'Boards'], ['pinned', 'Pinned'], ['trash', 'Trash']].map(([k, l]) => `<button data-filter="${k}">${l}</button>`).join('')}</div>
-    <div id="doclist" class="doclist"></div>
-    <div class="side-foot">
-      <button class="icon-btn" data-act="settings" title="Settings (Ctrl+,)">${icon('settings', 17)}</button>
-      <button class="icon-btn" data-act="shortcuts" title="Keyboard shortcuts (Ctrl+/)">${icon('keyboard', 17)}</button>
-      <button class="icon-btn" data-act="folder" title="Open data folder">${icon('folder', 17)}</button>
-      <span class="grow"></span>
-      <div class="theme-switch" role="group" aria-label="Theme">
-        <button data-theme-set="light" title="Light mode">${icon('sun', 15)}</button>
-        <button data-theme-set="dark" title="Dark mode">${icon('moon', 15)}</button>
-        <button data-theme-set="system" title="Follow Windows">A</button>
+    <div class="ws-user"></div>
+    <nav class="nav">
+      <button class="nav-item quiet" data-filter="pinned">${icon('star', 16)}<span>Starred</span><i data-count="pinned"></i></button>
+      <button class="nav-item quiet" data-filter="all">${icon('restore', 16)}<span>Recent</span></button>
+      <div class="nav-sec"><span>Library</span><button class="icon-btn xs-btn" data-act="newMenu" title="Create…">${icon('plus', 15)}</button></div>
+      <div class="nav-tree">
+        <button class="nav-item" data-filter="report"><span>Daily reports</span><i data-count="report"></i></button>
+        <button class="nav-item" data-filter="note"><span>Notes</span><i data-count="note"></i></button>
+        <button class="nav-item" data-filter="board"><span>Whiteboards</span><i data-count="board"></i></button>
+        <button class="nav-item" data-filter="trash"><span>Trash</span><i data-count="trash" class="hot"></i></button>
       </div>
+    </nav>
+    <div id="calendar" class="calendar"></div>
+    <div class="list-head"><span id="list-title">Recent</span></div>
+    <div id="doclist" class="doclist"></div>`;
+  $('#topbar').innerHTML = `
+    <button id="show-sidebar" class="icon-btn" data-act="collapse" title="Show sidebar (Ctrl+\\)">${icon('sidebar', 17)}</button>
+    <label class="search-pill">${icon('search', 18)}<input id="search" placeholder="Try searching “cable” or “Dennis”  (Ctrl+F)" autocomplete="off"><button class="icon-btn clear-search" title="Clear">${icon('x', 14)}</button></label>
+    <span class="grow"></span>
+    <span class="clock-pill" id="clock-pill"></span>
+    <div class="theme-switch" role="group" aria-label="Theme">
+      <button data-theme-set="light" title="Light mode">${icon('sun', 15)}</button>
+      <button data-theme-set="dark" title="Dark mode">${icon('moon', 15)}</button>
+      <button data-theme-set="system" title="Follow Windows">Auto</button>
     </div>`;
-  const sb = $('#sidebar');
-  sb.addEventListener('click', (e) => {
-    const b = e.target.closest('button');
-    if (!b) return;
-    if (b.dataset.filter) { S.filter = b.dataset.filter; renderList(); return; }
-    if (b.dataset.themeSet) { S.settings.theme = b.dataset.themeSet; applyTheme(); saveSettings(); syncThemeSwitch(); return; }
-    if (b.classList.contains('clear-search')) { $('#search').value = ''; S.query = ''; renderList(); return; }
-    const a = b.dataset.act;
-    if (a) actions[a]?.();
-  });
+  const tickClock = () => { const el = $('#clock-pill'); if (el) el.innerHTML = `${icon('clock', 15)}<span>${U.fmtShort(U.todayKey())}</span><b>${U.fmtClock()}</b>`; };
+  tickClock();
+  setInterval(tickClock, 15000);
+
+  for (const root of [$('#rail'), $('#sidebar'), $('#topbar')]) {
+    root.addEventListener('click', (e) => {
+      const b = e.target.closest('button');
+      if (!b) return;
+      if (b.dataset.filter) {
+        S.filter = b.dataset.filter;
+        if (!S.settings.sidebar) toggleSidebar(true);
+        renderList();
+        syncRail();
+        return;
+      }
+      if (b.dataset.themeSet) { S.settings.theme = b.dataset.themeSet; applyTheme(); saveSettings(); syncThemeSwitch(); return; }
+      if (b.classList.contains('clear-search')) { $('#search').value = ''; S.query = ''; renderList(); return; }
+      const a = b.dataset.act;
+      if (a === 'newMenu') { newMenu(b); return; }
+      if (a) actions[a]?.();
+    });
+  }
   const search = $('#search');
-  search.addEventListener('input', U.debounce(() => { S.query = search.value.trim().toLowerCase(); renderList(); }, 120));
+  search.addEventListener('input', U.debounce(() => {
+    S.query = search.value.trim().toLowerCase();
+    if (S.query && !S.settings.sidebar) toggleSidebar(true);
+    renderList();
+  }, 120));
   search.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') { search.value = ''; S.query = ''; renderList(); search.blur(); }
     if (e.key === 'Enter') { const first = $('#doclist .item'); if (first) openTab(first.dataset.id); }
@@ -326,15 +363,34 @@ function renderSidebarShell() {
       renderCalendar();
       return;
     }
-    if (b.dataset.day) {
-      const k = b.dataset.day;
-      const rep = findReport(k);
-      if (rep) openTab(rep.id);
-      else if (k > U.todayKey()) toast('That day is in the future — you can still create it from here.', 'info', { label: 'Create', fn: () => newReport(k) });
-      else newReport(k);
-    }
+    if (b.dataset.day) openDay(b.dataset.day);
   });
   syncThemeSwitch();
+}
+
+function openDay(k) {
+  const rep = findReport(k);
+  if (rep) openTab(rep.id);
+  else if (k > U.todayKey()) toast('That day is in the future — you can still create it from here.', 'info', { label: 'Create', fn: () => newReport(k) });
+  else newReport(k);
+}
+
+function newMenu(anchor) {
+  menu([
+    { label: "Today's report", icon: 'report', kbd: 'Ctrl+D', fn: actions.today },
+    { label: 'Report for another day…', icon: 'calendar', fn: pickDateReport },
+    { label: 'Note', icon: 'note', kbd: 'Ctrl+N', fn: newNote },
+    { label: 'Whiteboard', icon: 'board', kbd: 'Ctrl+Shift+N', fn: newBoard },
+    '-',
+    { label: 'Weekly / monthly report', icon: 'chart', kbd: 'Ctrl+R', fn: openRange },
+  ], anchor);
+}
+
+function syncRail() {
+  const d = S.docs.get(S.active);
+  const cur = d ? d.type : 'home';
+  $$('#rail [data-rail]').forEach((b) => b.classList.toggle('on', b.dataset.rail === cur));
+  $('#home-tab')?.classList.toggle('active', !d);
 }
 
 function syncThemeSwitch() {
@@ -374,11 +430,26 @@ function renderCalendar() {
     <div class="cal-grid">${cells}</div>`;
 }
 
-const renderListSoon = U.debounce(() => { renderList(); renderCalendar(); }, 250);
+const renderListSoon = U.debounce(() => { renderList(); renderCalendar(); refreshDashSoon(); }, 250);
 function renderList() {
   const el = $('#doclist');
   if (!el) return;
-  $$('.filters button').forEach((b) => b.classList.toggle('on', b.dataset.filter === S.filter));
+  $$('#sidebar [data-filter]').forEach((b) => b.classList.toggle('on', b.dataset.filter === S.filter));
+  const all = [...S.docs.values()];
+  const counts = { pinned: 0, report: 0, note: 0, board: 0, trash: 0 };
+  for (const d of all) {
+    if (d.trashed) { counts.trash++; continue; }
+    counts[d.type]++;
+    if (d.pinned) counts.pinned++;
+  }
+  $$('#sidebar [data-count]').forEach((el) => { const n = counts[el.dataset.count]; el.textContent = n || ''; el.hidden = !n; });
+  const lt = $('#list-title');
+  if (lt) lt.textContent = S.query ? 'Search results' : { all: 'Recent', pinned: 'Starred', report: 'Daily reports', note: 'Notes', board: 'Whiteboards', trash: 'Trash' }[S.filter];
+  const pu = $('.ws-user');
+  if (pu) {
+    const p = S.settings.profile;
+    pu.innerHTML = p.name ? `<span class="ws-av">${U.escHtml(p.name.slice(0, 1).toUpperCase())}</span><span class="ellipsis">${U.escHtml(p.name)}${p.branch ? ' · ' + U.escHtml(p.branch) : ''}</span>` : `<button class="link" data-act="settings">Set up your profile →</button>`;
+  }
   let docs = [...S.docs.values()];
   if (S.filter === 'trash') docs = docs.filter((d) => d.trashed);
   else {
@@ -429,11 +500,14 @@ function renderEditor() {
   const host = $('#editor');
   const doc = S.docs.get(S.active);
   if (!doc) {
-    host.innerHTML = welcomeHtml();
-    host.querySelectorAll('[data-act]').forEach((b) => b.addEventListener('click', () => actions[b.dataset.act]?.()));
+    host.innerHTML = dashboardHtml({ docs: liveDocs(), profile: S.settings.profile, greeting: greeting(), docTitle });
+    host.addEventListener('click', dashClick);
+    S.dashHost = host;
     renderStatus();
     return;
   }
+  host.removeEventListener('click', dashClick);
+  S.dashHost = null;
   host.innerHTML = `
     <div class="doc-head">
       <span class="doc-type t-${doc.type}">${icon(doc.type === 'report' ? 'report' : doc.type === 'board' ? 'board' : 'note', 16)}</span>
@@ -468,8 +542,8 @@ function renderEditor() {
         const p = S.settings.profile;
         let learned = false;
         // fill empty profile fields from this header, and keep following it while typing
-        for (const k of ['company', 'name', 'branch']) {
-          const v = doc.report.header[k];
+        for (const k of ['company', 'name', 'branch', 'submittedTo']) {
+          const v = k === 'submittedTo' ? doc.report.submittedTo : doc.report.header[k];
           if (v && v !== p[k] && (!p[k] || S.learnedFrom[k] === doc.id)) { p[k] = v; S.learnedFrom[k] = doc.id; learned = true; }
         }
         if (learned) saveSettings();
@@ -508,22 +582,16 @@ function renderDocHeaderMeta() {
   if (t) t.textContent = docTitle(doc);
 }
 
-function welcomeHtml() {
-  const reps = liveDocs().filter((d) => d.type === 'report').length;
-  return `<div class="welcome">
-    <div class="welcome-card">
-      <div class="logo big">${icon('note', 30)}</div>
-      <h1>${greeting()}${S.settings.profile.name ? ', ' + U.escHtml(S.settings.profile.name.split(' ')[0]) : ''}</h1>
-      <p class="muted">${U.fmtLong(U.todayKey())} · ${reps} daily report${reps === 1 ? '' : 's'} saved</p>
-      <div class="welcome-actions">
-        <button class="primary" data-act="today">${icon('report', 18)} Start today's report</button>
-        <button class="ghost" data-act="newNote">${icon('note', 18)} New note</button>
-        <button class="ghost" data-act="newBoard">${icon('board', 18)} Whiteboard</button>
-        <button class="ghost" data-act="range">${icon('chart', 18)} Weekly report</button>
-      </div>
-      ${!S.settings.profile.name ? `<button class="link" data-act="settings">Set up your name, branch & report header →</button>` : ''}
-    </div></div>`;
+function dashClick(e) {
+  const b = e.target.closest('button');
+  if (!b) return;
+  if (b.dataset.act) actions[b.dataset.act]?.();
+  else if (b.dataset.open) openTab(b.dataset.open);
+  else if (b.dataset.day) openDay(b.dataset.day);
 }
+
+/** Re-render the dashboard if it is showing (data changed elsewhere). */
+const refreshDashSoon = U.debounce(() => { if (!S.active && S.dashHost) renderEditor(); }, 400);
 
 function greeting() {
   const h = new Date().getHours();
@@ -711,6 +779,7 @@ async function openSettings() {
       <label>Your name<input data-p="name" value="${U.escHtml(p.name)}" placeholder="e.g. Jacques Shamalla"></label>
       <label>Branch / Department<input data-p="branch" value="${U.escHtml(p.branch)}" placeholder="e.g. Kakamega Branch"></label>
       <label>Default shift<input data-p="shift" value="${U.escHtml(p.shift)}"></label>
+      <label>Submitted to (supervisor / manager)<input data-p="submittedTo" value="${U.escHtml(p.submittedTo || '')}" placeholder="e.g. Branch Manager"></label>
       <label>Stats section title<input data-p="statsTitle" value="${U.escHtml(p.statsTitle)}"></label>
       <label>Metrics you track (one per line)<textarea data-pl="statLabels" rows="5">${U.escHtml(p.statLabels.join('\n'))}</textarea></label>
       <label>Your teams (one per line)<textarea data-pl="teams" rows="5" placeholder="e.g. Dennis&#10;Sylvester">${U.escHtml(p.teams.join('\n'))}</textarea></label>
@@ -734,7 +803,23 @@ async function openSettings() {
   `, {
     wide: true,
     onMount(m) {
-      m.querySelectorAll('[data-p]').forEach((el) => el.addEventListener('input', () => { p[el.dataset.p] = el.value; saveSettings(); }));
+      m.querySelectorAll('[data-p]').forEach((el) => el.addEventListener('input', () => {
+        const k = el.dataset.p;
+        const old = p[k] || '';
+        p[k] = el.value;
+        saveSettings();
+        // keep today's report in step with the profile while its fields are blank or still match
+        const rep = findReport(U.todayKey());
+        if (!rep) return;
+        const r = rep.report;
+        const follow = (obj, key) => { if (!obj[key] || obj[key] === old) { obj[key] = el.value; return true; } return false; };
+        let changed = false;
+        if (['company', 'subtitle', 'name', 'branch', 'shift'].includes(k)) changed = follow(r.header, k);
+        if (k === 'name') changed = follow(r, 'submittedBy') || changed;
+        if (k === 'submittedTo') changed = follow(r, 'submittedTo');
+        if (changed) { touch(rep); if (S.active === rep.id) S.editor?.render?.(); }
+        renderList();
+      }));
       m.querySelectorAll('[data-pl]').forEach((el) => el.addEventListener('input', () => { p[el.dataset.pl] = el.value.split('\n').map((s) => s.trim()).filter(Boolean); saveSettings(); }));
       m.querySelectorAll('[data-s]').forEach((el) => {
         const k = el.dataset.s;
@@ -837,6 +922,7 @@ function openRange() {
         const h = reps[reps.length - 1].report.header;
         const prof = { ...S.settings.profile };
         for (const k of ['company', 'name', 'branch']) if (!prof[k]) prof[k] = h[k] || '';
+        if (!prof.submittedTo) prof.submittedTo = reps[reps.length - 1].report.submittedTo || '';
         const opts = { title: f('title').value || 'Work Report', from: f('from').value, to: f('to').value, profile: prof, details: f('details').checked };
         try {
           if (b.dataset.go === 'docx') {
@@ -852,6 +938,7 @@ function openRange() {
 
 // ------------------------------------------------------------------ actions & keys
 const actions = {
+  home: () => activate(null),
   today: () => newReport(U.todayKey()),
   newNote,
   newBoard,
@@ -950,13 +1037,8 @@ function bindTabs() {
     renderTabs();
     persistTabs();
   });
-  $('#new-tab').addEventListener('click', (e) => menu([
-    { label: "Today's report", icon: 'report', kbd: 'Ctrl+D', fn: actions.today },
-    { label: 'Report for another day…', icon: 'calendar', fn: pickDateReport },
-    { label: 'Note', icon: 'note', kbd: 'Ctrl+N', fn: newNote },
-    { label: 'Whiteboard', icon: 'board', kbd: 'Ctrl+Shift+N', fn: newBoard },
-  ], e.currentTarget));
-  $('#show-sidebar').addEventListener('click', () => toggleSidebar(true));
+  $('#new-tab').addEventListener('click', (e) => newMenu(e.currentTarget));
+  $('#home-tab').addEventListener('click', () => activate(null));
 }
 
 function pickDateReport() {
