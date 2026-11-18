@@ -1,0 +1,14 @@
+{
+  "name": "redox-notes",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Fast daily work journal with auto-generated reports, rich notes and a whiteboard",
+  "scripts": {
+    "dev": "tauri dev",
+    "build": "tauri build",
+    "tauri": "tauri"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2"
+  }
+}
