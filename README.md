@@ -31,10 +31,19 @@ Pick a period (this week, last week, this month…) and get one document with
 totals for every metric, team performance, the blockers you hit and the full
 daily log. You can export it to Word or PDF, or copy it as text.
 
-### Notes
-Rich text with headings, bold, italic, underline, strikethrough, highlight, bullet and numbered lists,
-checklists, quotes and dividers. Press **F5** to insert the time and date, like Notepad.
-Notes export to Word, PDF or .txt.
+### Notes (a full word processor)
+- **Fonts and sizes:** a font picker, a size box (8–72 or type any size), and **Ctrl+]** / **Ctrl+[** to make text bigger or smaller
+- **Styles:** Normal, Heading 1–3, Quote, Code
+- **Text formatting:** bold, italic, underline, strikethrough, superscript, subscript, **font colour** and **highlight colour** (palettes plus custom colours)
+- **Alignment:** left, center, right, justify (**Ctrl+L / E / R / J**), plus **line spacing** (1.0–3.0) and indent / outdent
+- **Lists:** bullets, numbering and checklists
+- **Insert:** tables (Tab moves to the next cell and adds rows; add or delete rows and columns), links (**Ctrl+K**), divider lines, and the time and date (**F5**)
+- **Find & replace** (**Ctrl+F** / **Ctrl+H**) with match case and whole word options
+- **Undo / redo** (**Ctrl+Z** / **Ctrl+Y**)
+- **Paste:** keeps the formatting from Word, or **Ctrl+Shift+V** pastes plain text
+- **Layout:** **Page view** (a white sheet, like Word) or **Full width** (like Notepad). Hold Ctrl and scroll to zoom, like Notepad.
+- **Status bar:** line and column (**Ln / Col**) plus the word count
+- **Export:** everything above carries over to Word (.docx) and PDF
 
 ### Whiteboard
 Pen, highlighter, lines, arrows, rectangles, ellipses, text, sticky notes and an eraser.

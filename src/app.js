@@ -62,6 +62,7 @@ const isDark = () => document.documentElement.dataset.theme === 'dark';
 
 function applyFont() {
   document.documentElement.style.setProperty('--doc-size', S.settings.fontSize + 'px');
+  document.documentElement.style.setProperty('--zoom', String(S.settings.fontSize / 15));
 }
 
 // ------------------------------------------------------------------ persistence
@@ -559,7 +560,7 @@ function renderEditor() {
       },
     });
   } else if (doc.type === 'note') {
-    S.editor = new NoteEditor(body, doc, { onChange, stamp: () => `${U.fmtClock()} ${U.fmtShort(U.todayKey())}` });
+    S.editor = new NoteEditor(body, doc, { onChange, stamp: () => `${U.fmtClock()} ${U.fmtShort(U.todayKey())}`, zoom: (d) => zoom(d) });
   } else {
     S.editor = new Board(body, doc, { onChange, isDark });
   }
@@ -614,6 +615,7 @@ function renderStatus() {
   }
   el.innerHTML = `
     <span id="save-state" class="save-state"></span>
+    ${doc?.type === 'note' ? '<span class="sep"></span><span id="caret-pos">Ln 1, Col 1</span>' : ''}
     <span class="sep"></span><span>${info}</span>
     <span class="grow"></span>
     <span class="muted">${isApp ? 'Saved to Documents\\RedoxNotes' : 'Browser preview'}</span>
@@ -624,6 +626,7 @@ function renderStatus() {
     <span class="sep"></span>
     <button class="sb-btn" data-act="toggleTheme" title="Toggle light/dark (Ctrl+Shift+L)">${isDark() ? icon('sun', 14) + ' Light' : icon('moon', 14) + ' Dark'}</button>`;
   setSave(S.saveState);
+  if (S.editor instanceof NoteEditor) S.editor.updateCaret();
 }
 
 function zoom(dir) {
@@ -868,7 +871,9 @@ function openShortcuts() {
     ['Ctrl+S', 'Save now (it autosaves anyway)'], ['Ctrl+E', 'Export to Word'], ['Ctrl+P', 'Print / save as PDF'], ['Ctrl+Shift+C', 'Copy as text'],
     ['F5', 'Insert current time (and date in notes)'], ['Ctrl+Shift+L', 'Toggle dark / light'], ['Ctrl+\\', 'Show / hide sidebar'], ['Ctrl+= / Ctrl+-', 'Text bigger / smaller'],
     ['Ctrl+,', 'Settings'], ['Ctrl+Del', 'Move current item to Trash'],
-    ['Tab / Shift+Tab', 'Indent / outdent a line (time log & lists)'], ['Ctrl+1 / 2 / 0', 'Heading 1 / 2 / normal (notes)'], ['Ctrl+Shift+9', 'Checklist (notes)'],
+    ['Tab / Shift+Tab', 'Indent / outdent (lists, time log), next cell in tables'], ['Ctrl+1 / 2 / 3 / 0', 'Heading 1 / 2 / 3 / normal (notes)'], ['Ctrl+Shift+9', 'Checklist (notes)'],
+    ['Ctrl+] / Ctrl+[', 'Bigger / smaller font (notes)'], ['Ctrl+L / E / R / J', 'Align left / center / right / justify (notes)'], ['Ctrl+K', 'Insert link (notes)'],
+    ['Ctrl+F / Ctrl+H', 'Find / replace inside a note'], ['Ctrl+Shift+H', 'Highlight (notes)'], ['Ctrl+Shift+V', 'Paste as plain text (notes)'], ['Ctrl+Space', 'Clear formatting (notes)'],
     ['V P H E L A R O T S', 'Whiteboard tools'], ['Space + drag', 'Pan the whiteboard'], ['Ctrl+scroll', 'Zoom the whiteboard'],
   ];
   modal('Keyboard shortcuts', `<div class="shortcuts">${rows.map(([k, v]) => `<div><kbd>${k}</kbd><span>${v}</span></div>`).join('')}</div>`, { wide: true });

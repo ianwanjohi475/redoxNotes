@@ -102,7 +102,9 @@ function runXml(r) {
   if (r.size) pr += `<w:sz w:val="${Math.round(r.size * 2)}"/>`;
   if (r.hl) pr += '<w:highlight w:val="yellow"/>';
   if (r.u) pr += '<w:u w:val="single"/>';
+  if (r.bg) pr += `<w:shd w:val="clear" w:color="auto" w:fill="${r.bg}"/>`;
   if (r.sup) pr += '<w:vertAlign w:val="superscript"/>';
+  else if (r.sub) pr += '<w:vertAlign w:val="subscript"/>';
   const rpr = pr ? `<w:rPr>${pr}</w:rPr>` : '';
   const text = String(r.text ?? '');
   let inner = '';
@@ -152,8 +154,8 @@ export class Docx {
     if (o.leftBar) ppr += `<w:pBdr><w:left w:val="single" w:sz="18" w:space="8" w:color="${o.leftBar}"/></w:pBdr>`;
     if (o.shade) ppr += `<w:shd w:val="clear" w:color="auto" w:fill="${o.shade}"/>`;
     if (o.tabs) ppr += `<w:tabs>${o.tabs.map((t) => `<w:tab w:val="left" w:pos="${t}"/>`).join('')}</w:tabs>`;
-    if (o.before != null || o.after != null) {
-      ppr += `<w:spacing${o.before != null ? ` w:before="${o.before}"` : ''}${o.after != null ? ` w:after="${o.after}"` : ''}/>`;
+    if (o.before != null || o.after != null || o.line) {
+      ppr += `<w:spacing${o.before != null ? ` w:before="${o.before}"` : ''}${o.after != null ? ` w:after="${o.after}"` : ''}${o.line ? ` w:line="${Math.round(240 * o.line)}" w:lineRule="auto"` : ''}/>`;
     }
     if (o.indent) ppr += `<w:ind w:left="${o.indent}"/>`;
     if (o.align) ppr += `<w:jc w:val="${o.align}"/>`;
