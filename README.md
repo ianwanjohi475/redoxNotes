@@ -56,6 +56,14 @@ daily log. You can export it to Word or PDF, or copy it as text.
 - **Undo / redo**
 - **Export:** save a PNG, or **copy the board as an image** to paste into WhatsApp, Word or email
 
+### Notepad-style layout
+- Slim **tabs** along the top, like Notepad, that shrink to fit when you open lots of documents
+- A **File / Edit / View** menu bar, with Word / PDF / Copy on the same row
+- A **one-row** formatting toolbar. Less-used tools are under **⋯ More**.
+- Notes fill the window (**Full width**), or switch to **Page view** from the toolbar or the View menu
+- A **status bar** with line and column, word and character count, date created, save status, zoom, UTF-8 and the light/dark switch
+- **Ctrl+\\** hides the sidebar when you want even more room
+
 ### Everything else
 - **Autosave** as you type. Your data is plain JSON files in `Documents\RedoxNotes`, so you can back up or sync the folder with OneDrive.
 - **Light / dark / follow-Windows** themes.

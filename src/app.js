@@ -107,7 +107,7 @@ function setSave(state) {
     error: 'Save failed — retrying',
   }[state];
   el.innerHTML = `${state === 'saved' ? icon('check', 14) : ''}<span>${txt}</span>`;
-  el.className = 'save-state ' + state;
+  el.className = 'sb-cell save-state ' + state;
   if (state === 'error') setTimeout(() => saveSoon(), 3000);
 }
 
@@ -297,14 +297,12 @@ function renderSidebarShell() {
     <div id="calendar" class="calendar"></div>
     <div class="list-head"><span id="list-title">Recent</span></div>
     <div id="doclist" class="doclist"></div>`;
-  $('#topbar').innerHTML = `
-    <button id="show-sidebar" class="icon-btn" data-act="collapse" title="Show sidebar (Ctrl+\\)">${icon('sidebar', 17)}</button>
-    <label class="search-pill">${icon('search', 18)}<input id="search" placeholder="Try searching “cable” or “Dennis”  (Ctrl+F)" autocomplete="off"><button class="icon-btn clear-search" title="Clear">${icon('x', 14)}</button></label>
-    <span class="grow"></span>
+  $('#topbar-right').innerHTML = `
+    <label class="search-pill">${icon('search', 16)}<input id="search" placeholder="Search everything  (Ctrl+F)" autocomplete="off"><button class="icon-btn clear-search" title="Clear">${icon('x', 13)}</button></label>
     <span class="clock-pill" id="clock-pill"></span>
     <div class="theme-switch" role="group" aria-label="Theme">
-      <button data-theme-set="light" title="Light mode">${icon('sun', 15)}</button>
-      <button data-theme-set="dark" title="Dark mode">${icon('moon', 15)}</button>
+      <button data-theme-set="light" title="Light mode">${icon('sun', 14)}</button>
+      <button data-theme-set="dark" title="Dark mode">${icon('moon', 14)}</button>
       <button data-theme-set="system" title="Follow Windows">Auto</button>
     </div>`;
   const tickClock = () => { const el = $('#clock-pill'); if (el) el.innerHTML = `${icon('clock', 15)}<span>${U.fmtShort(U.todayKey())}</span><b>${U.fmtClock()}</b>`; };
@@ -511,21 +509,24 @@ function renderEditor() {
   S.dashHost = null;
   host.innerHTML = `
     <div class="doc-head">
-      <span class="doc-type t-${doc.type}">${icon(doc.type === 'report' ? 'report' : doc.type === 'board' ? 'board' : 'note', 16)}</span>
+      <nav class="menubar">
+        <button data-menu="file">File</button><button data-menu="edit">Edit</button><button data-menu="view">View</button>
+      </nav>
+      <span class="doc-type t-${doc.type}">${icon(doc.type === 'report' ? 'report' : doc.type === 'board' ? 'board' : 'note', 15)}</span>
       ${doc.type === 'board' ? `<input class="board-title" value="${U.escHtml(doc.title || '')}" placeholder="${U.escHtml(docTitle({ ...doc, title: '' }))}">` : `<span class="doc-title">${U.escHtml(docTitle(doc))}</span>`}
-      <span class="doc-meta"></span>
       <span class="grow"></span>
       ${doc.trashed ? `<button class="primary sm" data-x="restore">${icon('restore', 15)} Restore</button>` : ''}
       ${doc.type === 'board'
-        ? `<button class="ghost sm" data-x="png" title="Export as image">${icon('image', 15)} Export PNG</button>`
-        : `<button class="ghost sm" data-x="docx" title="Export to Word (Ctrl+E)">${icon('word', 15)} Word</button>
-           <button class="ghost sm" data-x="print" title="Print or save as PDF (Ctrl+P)">${icon('printer', 15)} PDF / Print</button>
-           <button class="ghost sm" data-x="copy" title="Copy as text — paste into WhatsApp, email… (Ctrl+Shift+C)">${icon('copy', 15)} Copy text</button>`}
+        ? `<button class="act-btn" data-x="png" title="Export as image">${icon('image', 15)}<span>Export PNG</span></button>`
+        : `<button class="act-btn" data-x="docx" title="Export to Word (Ctrl+E)">${icon('word', 15)}<span>Word</span></button>
+           <button class="act-btn" data-x="print" title="Print or save as PDF (Ctrl+P)">${icon('printer', 15)}<span>PDF</span></button>
+           <button class="act-btn" data-x="copy" title="Copy as text — paste into WhatsApp, email… (Ctrl+Shift+C)">${icon('copy', 15)}<span>Copy</span></button>`}
       <button class="icon-btn" data-x="more" title="More actions">${icon('more', 17)}</button>
     </div>
     <div class="doc-body"></div>`;
-  renderDocHeaderMeta();
   host.querySelector('.doc-head').addEventListener('click', (e) => {
+    const m = e.target.closest('[data-menu]');
+    if (m) { docMenu(m.dataset.menu, m, doc); return; }
     const b = e.target.closest('[data-x]');
     if (!b) return;
     const x = b.dataset.x;
@@ -567,6 +568,73 @@ function renderEditor() {
   renderStatus();
 }
 
+/** Notepad-style File / Edit / View menus. */
+function docMenu(kind, anchor, doc) {
+  const ed = S.editor;
+  const isNote = ed instanceof NoteEditor;
+  const isBoard = ed instanceof Board;
+  const exec = (c) => { if (isNote) ed.cmd(c); else if (isBoard) (c === 'undo' ? ed.undo() : ed.redo()); else document.execCommand(c); };
+  let items = [];
+  if (kind === 'file') {
+    items = [
+      { label: 'New note', icon: 'note', kbd: 'Ctrl+N', fn: newNote },
+      { label: 'New whiteboard', icon: 'board', kbd: 'Ctrl+Shift+N', fn: newBoard },
+      { label: "Today's report", icon: 'report', kbd: 'Ctrl+D', fn: actions.today },
+      { label: 'Report for another day…', icon: 'calendar', fn: pickDateReport },
+      '-',
+      ...(doc.type === 'board'
+        ? [{ label: 'Export PNG…', icon: 'image', fn: () => exportDoc(doc, 'png') }]
+        : [
+          { label: 'Export to Word…', icon: 'word', kbd: 'Ctrl+E', fn: () => exportDoc(doc, 'docx') },
+          { label: 'Print / Save as PDF', icon: 'printer', kbd: 'Ctrl+P', fn: () => exportDoc(doc, 'print') },
+          { label: 'Save as text file…', icon: 'download', fn: () => exportDoc(doc, 'txt') },
+          { label: 'Copy as text', icon: 'copy', kbd: 'Ctrl+Shift+C', fn: () => exportDoc(doc, 'copy') },
+        ]),
+      '-',
+      { label: 'Duplicate', icon: 'duplicate', fn: () => duplicate(doc) },
+      { label: doc.pinned ? 'Unpin' : 'Pin to top', icon: 'pin', fn: () => { doc.pinned = !doc.pinned; touch(doc, { quiet: true }); renderList(); } },
+      { label: 'Weekly / monthly report…', icon: 'chart', kbd: 'Ctrl+R', fn: openRange },
+      '-',
+      { label: 'Close tab', icon: 'x', kbd: 'Ctrl+W', fn: () => closeTab(doc.id) },
+      { label: 'Move to Trash', icon: 'trash', danger: true, kbd: 'Ctrl+Del', fn: () => trashDoc(doc) },
+    ];
+  } else if (kind === 'edit') {
+    items = [
+      { label: 'Undo', icon: 'undo', kbd: 'Ctrl+Z', fn: () => exec('undo') },
+      { label: 'Redo', icon: 'redo', kbd: 'Ctrl+Y', fn: () => exec('redo') },
+    ];
+    if (isNote) {
+      items.push('-',
+        { label: 'Find', icon: 'search', kbd: 'Ctrl+F', fn: () => ed.openFind(false) },
+        { label: 'Replace', icon: 'search', kbd: 'Ctrl+H', fn: () => ed.openFind(true) },
+        '-',
+        { label: 'Select all', kbd: 'Ctrl+A', fn: () => { ed.body.focus(); document.execCommand('selectAll'); } },
+        { label: 'Time / date', icon: 'clock', kbd: 'F5', fn: () => ed.insertStamp() },
+        { label: 'Clear formatting', icon: 'eraseFormat', kbd: 'Ctrl+Space', fn: () => ed.cmd('clear') });
+    } else if (isBoard) {
+      items.push('-',
+        { label: 'Select all', kbd: 'Ctrl+A', fn: () => { ed.tool = 'select'; ed.sel = new Set(ed.data.items); ed.syncUi(); ed.draw(); } },
+        { label: 'Insert image…', icon: 'image', kbd: 'I', fn: () => ed.fileInput.click() },
+        { label: 'Clear board', icon: 'trash', danger: true, fn: () => ed.act('clear') });
+    }
+  } else {
+    items = [
+      { label: 'Zoom in', icon: 'zoomIn', kbd: 'Ctrl+=', fn: () => (isBoard ? ed.act('zoomIn') : zoom(1)) },
+      { label: 'Zoom out', icon: 'zoomOut', kbd: 'Ctrl+-', fn: () => (isBoard ? ed.act('zoomOut') : zoom(-1)) },
+      { label: 'Restore default zoom', kbd: 'Ctrl+0', fn: () => (isBoard ? ed.act('zoomReset') : zoom(0)) },
+    ];
+    if (isNote) items.push('-',
+      { label: 'Full width (like Notepad)', icon: 'fit', fn: () => ed.setView('wide') },
+      { label: 'Page view (like Word)', icon: 'file', fn: () => ed.setView('page') });
+    if (isBoard) items.push({ label: 'Zoom to fit', icon: 'fit', kbd: 'Shift+1', fn: () => ed.fit() });
+    items.push('-',
+      { label: S.settings.sidebar ? 'Hide sidebar' : 'Show sidebar', icon: 'sidebar', kbd: 'Ctrl+\\', fn: () => toggleSidebar() },
+      { label: isDark() ? 'Light mode' : 'Dark mode', icon: isDark() ? 'sun' : 'moon', kbd: 'Ctrl+Shift+L', fn: actions.toggleTheme },
+      { label: 'Keyboard shortcuts', icon: 'keyboard', kbd: 'Ctrl+/', fn: openShortcuts });
+  }
+  menu(items, anchor, { left: true });
+}
+
 function renderDocHeader(doc) {
   const t = $('#editor .doc-title');
   if (t) t.textContent = docTitle(doc);
@@ -576,9 +644,9 @@ function renderDocHeader(doc) {
 
 function renderDocHeaderMeta() {
   const doc = S.docs.get(S.active);
-  const el = $('#editor .doc-meta');
-  if (!doc || !el) return;
-  el.textContent = `Created ${U.fmtStamp(doc.created)} · Edited ${U.fmtStamp(doc.updated)}`;
+  if (!doc) return;
+  const el = $('#doc-stamp');
+  if (el) el.textContent = `Created ${U.fmtStamp(doc.created)}`;
   const t = $('#editor .doc-title');
   if (t) t.textContent = docTitle(doc);
 }
@@ -613,18 +681,17 @@ function renderStatus() {
     const words = (text.match(/\S+/g) || []).length;
     info = doc.type === 'board' ? `${doc.board.items.length} object${doc.board.items.length === 1 ? '' : 's'}` : `${words.toLocaleString()} words · ${text.length.toLocaleString()} characters`;
   }
+  const kind = !doc ? 'Dashboard' : doc.type === 'report' ? 'Daily report' : doc.type === 'board' ? 'Whiteboard' : 'Rich text';
+  const pct = doc?.type === 'board' && S.editor instanceof Board ? Math.round(S.editor.data.view.z * 100) : Math.round((S.settings.fontSize / 15) * 100);
   el.innerHTML = `
-    <span id="save-state" class="save-state"></span>
-    ${doc?.type === 'note' ? '<span class="sep"></span><span id="caret-pos">Ln 1, Col 1</span>' : ''}
-    <span class="sep"></span><span>${info}</span>
-    <span class="grow"></span>
-    <span class="muted">${isApp ? 'Saved to Documents\\RedoxNotes' : 'Browser preview'}</span>
-    <span class="sep"></span>
-    <button class="sb-btn" data-zoom="-1" title="Smaller text (Ctrl+-)">A−</button>
-    <span class="zoom">${Math.round((S.settings.fontSize / 15) * 100)}%</span>
-    <button class="sb-btn" data-zoom="1" title="Larger text (Ctrl+=)">A+</button>
-    <span class="sep"></span>
-    <button class="sb-btn" data-act="toggleTheme" title="Toggle light/dark (Ctrl+Shift+L)">${isDark() ? icon('sun', 14) + ' Light' : icon('moon', 14) + ' Dark'}</button>`;
+    ${doc?.type === 'note' ? '<span id="caret-pos" class="sb-cell">Ln 1, Col 1</span>' : ''}
+    ${doc ? `<span class="sb-cell">${info}</span>` : ''}
+    <span class="sb-cell grow" id="doc-stamp">${doc ? `Created ${U.fmtStamp(doc.created)}` : ''}</span>
+    <span class="sb-cell" id="save-state"></span>
+    <span class="sb-cell">${kind}</span>
+    <span class="sb-cell zoom-cell"><button class="sb-btn" data-zoom="-1" title="Zoom out (Ctrl+-)">−</button><span class="zoom">${pct}%</span><button class="sb-btn" data-zoom="1" title="Zoom in (Ctrl+=)">+</button></span>
+    <span class="sb-cell">UTF-8</span>
+    <span class="sb-cell"><button class="sb-btn" data-act="toggleTheme" title="Toggle light/dark (Ctrl+Shift+L)">${isDark() ? icon('sun', 13) + ' Light' : icon('moon', 13) + ' Dark'}</button></span>`;
   setSave(S.saveState);
   if (S.editor instanceof NoteEditor) S.editor.updateCaret();
 }
@@ -685,14 +752,14 @@ async function copyText(text) {
 }
 
 // ------------------------------------------------------------------ menus, toasts, modals
-function menu(items, anchor) {
+function menu(items, anchor, opts = {}) {
   closeMenu();
   const m = document.createElement('div');
   m.className = 'menu';
   m.innerHTML = items.map((it, i) => (it === '-' ? '<div class="menu-sep"></div>' : `<button data-i="${i}" class="${it.danger ? 'danger' : ''}">${it.icon ? icon(it.icon, 15) : ''}<span>${it.label}</span>${it.kbd ? `<kbd>${it.kbd}</kbd>` : ''}</button>`)).join('');
   document.body.appendChild(m);
   let x, y;
-  if (anchor instanceof Element) { const r = anchor.getBoundingClientRect(); x = r.right - m.offsetWidth; y = r.bottom + 4; if (x < 8) x = r.left; } else { x = anchor.x; y = anchor.y; }
+  if (anchor instanceof Element) { const r = anchor.getBoundingClientRect(); x = opts.left ? r.left : r.right - m.offsetWidth; y = r.bottom + 4; if (x < 8) x = r.left; } else { x = anchor.x; y = anchor.y; }
   x = Math.max(8, Math.min(x, innerWidth - m.offsetWidth - 8));
   if (y + m.offsetHeight > innerHeight - 8) y = Math.max(8, innerHeight - m.offsetHeight - 8);
   m.style.left = x + 'px';
@@ -1070,6 +1137,14 @@ async function boot() {
   renderSidebarShell();
   bindTabs();
   document.addEventListener('keydown', onKey);
+  $('#status').addEventListener('click', (e) => {
+    const b = e.target.closest('button');
+    if (!b) return;
+    if (b.dataset.zoom) {
+      const d = +b.dataset.zoom;
+      if (S.editor instanceof Board) { S.editor.act(d > 0 ? 'zoomIn' : 'zoomOut'); renderStatus(); } else zoom(d);
+    } else if (b.dataset.act) actions[b.dataset.act]?.();
+  });
 
   try {
     for (const d of await Store.loadAll()) if (d && d.id && d.type) S.docs.set(d.id, d);

@@ -120,45 +120,35 @@ const T = (txt) => `<span class="tb-txt">${txt}</span>`;
 function toolbarHtml(view) {
   return `
     <div class="fmt-group">
-      ${btn('undo', icon('undo'), 'Undo (Ctrl+Z)')}${btn('redo', icon('redo'), 'Redo (Ctrl+Y)')}
+      ${btn('undo', icon('undo', 17), 'Undo (Ctrl+Z)')}${btn('redo', icon('redo', 17), 'Redo (Ctrl+Y)')}
     </div>${SEP}
     <div class="fmt-group">
       <select class="fmt-select block-select" data-sel="block" title="Paragraph style">${BLOCKS.map(([v, l]) => `<option value="${v}">${l}</option>`).join('')}</select>
       <select class="fmt-select font-select" data-sel="font" title="Font">${FONTS.map((f) => `<option value="${f}" style="font-family:'${f}'">${f}</option>`).join('')}</select>
       <div class="size-box" title="Font size">
-        ${btn('sizeDown', icon('minus', 15), 'Decrease font size (Ctrl+[)')}
+        ${btn('sizeDown', icon('minus', 14), 'Decrease font size (Ctrl+[)')}
         <input class="size-input" data-sel="size" list="rdx-sizes" value="11" inputmode="decimal" aria-label="Font size">
-        <datalist id="rdx-sizes">${SIZES.map((s) => `<option value="${s}">`).join('')}</datalist>
-        ${btn('sizeUp', icon('plus', 15), 'Increase font size (Ctrl+])')}
+        <datalist id="rdx-sizes">${SIZES.map((sz) => `<option value="${sz}">`).join('')}</datalist>
+        ${btn('sizeUp', icon('plus', 14), 'Increase font size (Ctrl+])')}
       </div>
     </div>${SEP}
     <div class="fmt-group">
-      ${btn('bold', icon('bold'), 'Bold (Ctrl+B)')}${btn('italic', icon('italic'), 'Italic (Ctrl+I)')}${btn('underline', icon('underline'), 'Underline (Ctrl+U)')}${btn('strike', icon('strike'), 'Strikethrough (Ctrl+Shift+X)')}
-      ${btn('superscript', T('x<sup>2</sup>'), 'Superscript')}${btn('subscript', T('x<sub>2</sub>'), 'Subscript')}
+      ${btn('bold', icon('bold', 17), 'Bold (Ctrl+B)')}${btn('italic', icon('italic', 17), 'Italic (Ctrl+I)')}${btn('underline', icon('underline', 17), 'Underline (Ctrl+U)')}${btn('strike', icon('strike', 17), 'Strikethrough (Ctrl+Shift+X)')}
     </div>${SEP}
     <div class="fmt-group">
-      <span class="split">${btn('color', `<span class="color-a">A<i class="cbar" data-bar="color"></i></span>`, 'Font colour')}${btn('colorMenu', icon('down', 13), 'More colours', 'data-narrow')}</span>
-      <span class="split">${btn('hilite', `<span class="color-a">${icon('highlighter', 16)}<i class="cbar" data-bar="hilite"></i></span>`, 'Highlight (Ctrl+Shift+H)')}${btn('hiliteMenu', icon('down', 13), 'Highlight colours', 'data-narrow')}</span>
+      <span class="split">${btn('color', `<span class="color-a">A<i class="cbar" data-bar="color"></i></span>`, 'Font colour')}${btn('colorMenu', icon('down', 12), 'More colours', 'data-narrow')}</span>
+      <span class="split">${btn('hilite', `<span class="color-a">${icon('highlighter', 15)}<i class="cbar" data-bar="hilite"></i></span>`, 'Highlight (Ctrl+Shift+H)')}${btn('hiliteMenu', icon('down', 12), 'Highlight colours', 'data-narrow')}</span>
     </div>${SEP}
     <div class="fmt-group">
-      ${btn('alignLeft', icon('alignLeft'), 'Align left (Ctrl+L)')}${btn('alignCenter', icon('alignCenter'), 'Center (Ctrl+E)')}${btn('alignRight', icon('alignRight'), 'Align right (Ctrl+R)')}${btn('alignJustify', icon('alignJustify'), 'Justify (Ctrl+J)')}
+      <span class="split">${btn('alignMenu', `<span class="align-ic">${icon('alignLeft', 17)}</span>`, 'Alignment (Ctrl+L / E / R / J)')}</span>
+      ${btn('ul', icon('ul', 17), 'Bullets (Ctrl+Shift+8)')}${btn('ol', icon('ol', 17), 'Numbering (Ctrl+Shift+7)')}${btn('check', icon('checklist', 17), 'Checklist (Ctrl+Shift+9)')}
     </div>${SEP}
     <div class="fmt-group">
-      ${btn('ul', icon('ul'), 'Bullets (Ctrl+Shift+8)')}${btn('ol', icon('ol'), 'Numbering (Ctrl+Shift+7)')}${btn('check', icon('checklist'), 'Checklist (Ctrl+Shift+9)')}
-      ${btn('outdent', icon('outdent'), 'Decrease indent (Shift+Tab)')}${btn('indent', icon('indent'), 'Increase indent (Tab)')}
-      ${btn('spacing', icon('lineSpacing'), 'Line spacing')}
-    </div>${SEP}
-    <div class="fmt-group">
-      ${btn('link', icon('link'), 'Link (Ctrl+K)')}${btn('table', icon('table'), 'Table')}${btn('hr', icon('hr'), 'Divider line')}${btn('time', icon('clock'), 'Insert time & date (F5)')}
-    </div>${SEP}
-    <div class="fmt-group">
-      ${btn('clear', icon('eraseFormat'), 'Clear formatting (Ctrl+Space)')}${btn('find', icon('search'), 'Find & replace (Ctrl+F / Ctrl+H)')}
+      ${btn('link', icon('link', 17), 'Link (Ctrl+K)')}${btn('table', icon('table', 17), 'Table')}${btn('find', icon('search', 17), 'Find & replace (Ctrl+F / Ctrl+H)')}${btn('moreMenu', icon('more', 17), 'More: superscript, indent, line spacing, divider, time…')}
     </div>
     <span class="grow"></span>
-    <div class="view-toggle" role="group" aria-label="Layout">
-      <button data-view="page" class="${view === 'page' ? 'on' : ''}" title="Page view (like Word)">${icon('file', 15)}</button>
-      <button data-view="wide" class="${view === 'wide' ? 'on' : ''}" title="Full width (like Notepad)">${icon('fit', 15)}</button>
-    </div>`;
+    <button class="tb-btn view-btn" data-view="toggle" title="${view === 'wide' ? 'Switch to page view (like Word)' : 'Switch to full width (like Notepad)'}">${icon(view === 'wide' ? 'file' : 'fit', 16)}</button>
+`;
 }
 
 function findBarHtml() {
@@ -181,7 +171,7 @@ function findBarHtml() {
 }
 
 const VIEW_KEY = 'redox.noteView';
-const readView = () => { try { return localStorage.getItem(VIEW_KEY) || 'page'; } catch { return 'page'; } };
+const readView = () => { try { return localStorage.getItem(VIEW_KEY) || 'wide'; } catch { return 'wide'; } };
 const saveView = (v) => { try { localStorage.setItem(VIEW_KEY, v); } catch { /* ignore */ } };
 
 // ---------------------------------------------------------------- editor
@@ -250,7 +240,7 @@ export class NoteEditor {
       const b = e.target.closest('button');
       if (!b) return;
       e.preventDefault();
-      if (b.dataset.view) { this.setView(b.dataset.view); return; }
+      if (b.dataset.view) { this.setView(this.wrap.classList.contains('wide') ? 'page' : 'wide'); return; }
       this.cmd(b.dataset.cmd, b);
     });
     this.bar.querySelector('[data-sel="block"]').addEventListener('change', (e) => this.cmd('block', e.target.value));
@@ -359,6 +349,11 @@ export class NoteEditor {
     on('alignCenter', align === 'center');
     on('alignRight', /^(right|end)$/.test(align));
     on('alignJustify', align === 'justify');
+    const aic = this.bar.querySelector('.align-ic');
+    if (aic) {
+      const cur = align === 'center' ? 'alignCenter' : /^(right|end)$/.test(align) ? 'alignRight' : align === 'justify' ? 'alignJustify' : 'alignLeft';
+      if (aic.dataset.cur !== cur) { aic.dataset.cur = cur; aic.innerHTML = icon(cur, 17); }
+    }
     on('table', !!this.anchorEl().closest('table'));
     on('find', !this.findBar.hidden);
 
@@ -459,6 +454,8 @@ export class NoteEditor {
     if (c === 'colorMenu') { this.colorMenu(arg, 'color'); return; }
     if (c === 'hiliteMenu') { this.colorMenu(arg, 'hilite'); return; }
     if (c === 'spacing') { this.spacingMenu(arg); return; }
+    if (c === 'alignMenu') { this.alignMenu(arg); return; }
+    if (c === 'moreMenu') { this.moreMenu(arg); return; }
     if (c === 'table') { this.tableMenu(arg); return; }
     if (c === 'link') { this.linkMenu(arg); return; }
     if (c === 'find') { this.openFind(false); return; }
@@ -558,10 +555,13 @@ export class NoteEditor {
     p.style.left = Math.max(8, x) + 'px';
     p.style.top = r.bottom + 6 + 'px';
     p.addEventListener('mousedown', (e) => { if (!e.target.closest('input')) e.preventDefault(); });
-    const outside = (e) => { if (!p.contains(e.target) && !anchor.contains(e.target)) this.closePop(); };
-    const esc = (e) => { if (e.key === 'Escape') { this.closePop(); this.restore(); } };
-    setTimeout(() => { document.addEventListener('mousedown', outside); document.addEventListener('keydown', esc, true); }, 0);
-    this._pop = { el: p, cleanup: () => { document.removeEventListener('mousedown', outside); document.removeEventListener('keydown', esc, true); } };
+    // only ever act for the popup that is currently open
+    const mine = () => this._pop && this._pop.el === p;
+    const outside = (e) => { if (mine() && !p.contains(e.target) && !anchor.contains(e.target)) this.closePop(); };
+    const esc = (e) => { if (mine() && e.key === 'Escape') { this.closePop(); this.restore(); } };
+    let alive = true;
+    setTimeout(() => { if (!alive) return; document.addEventListener('mousedown', outside); document.addEventListener('keydown', esc, true); }, 0);
+    this._pop = { el: p, cleanup: () => { alive = false; document.removeEventListener('mousedown', outside); document.removeEventListener('keydown', esc, true); } };
     bind(p);
     return p;
   }
@@ -587,6 +587,31 @@ export class NoteEditor {
       };
       p.querySelectorAll('[data-c]').forEach((b) => b.addEventListener('click', () => pick(b.dataset.c)));
       p.querySelector('input[type=color]').addEventListener('change', (e) => pick(e.target.value));
+    });
+  }
+
+  alignMenu(anchor) {
+    const opts = [['alignLeft', 'Align left', 'Ctrl+L'], ['alignCenter', 'Center', 'Ctrl+E'], ['alignRight', 'Align right', 'Ctrl+R'], ['alignJustify', 'Justify', 'Ctrl+J']];
+    const cur = this.bar.querySelector('.align-ic')?.dataset.cur || 'alignLeft';
+    this.pop(anchor, opts.map(([c, l, k]) => `<button class="pop-item row ${cur === c ? 'on' : ''}" data-a="${c}">${icon(c, 16)}<span>${l}</span><kbd>${k}</kbd></button>`).join(''), (p) => {
+      p.querySelectorAll('[data-a]').forEach((b) => b.addEventListener('click', () => { this.closePop(); this.cmd(b.dataset.a); }));
+    });
+  }
+
+  moreMenu(anchor) {
+    const opts = [
+      ['superscript', 'Superscript', 'x²', ''], ['subscript', 'Subscript', 'x₂', ''],
+      ['-'], ['indent', 'Increase indent', icon('indent', 16), 'Tab'], ['outdent', 'Decrease indent', icon('outdent', 16), 'Shift+Tab'],
+      ['spacing', 'Line spacing…', icon('lineSpacing', 16), ''],
+      ['-'], ['hr', 'Divider line', icon('hr', 16), ''], ['time', 'Insert time & date', icon('clock', 16), 'F5'],
+      ['clear', 'Clear formatting', icon('eraseFormat', 16), 'Ctrl+Space'],
+    ];
+    this.pop(anchor, opts.map((o) => (o[0] === '-' ? '<div class="pop-sep"></div>' : `<button class="pop-item row" data-a="${o[0]}"><span class="pi-ic">${o[2]}</span><span>${o[1]}</span><kbd>${o[3]}</kbd></button>`)).join(''), (p) => {
+      p.querySelectorAll('[data-a]').forEach((b) => b.addEventListener('click', () => {
+        const a = b.dataset.a;
+        this.closePop();
+        if (a === 'spacing') this.spacingMenu(anchor); else this.cmd(a);
+      }));
     });
   }
 
@@ -776,7 +801,8 @@ export class NoteEditor {
     saveView(v);
     this.wrap.classList.toggle('page', v === 'page');
     this.wrap.classList.toggle('wide', v === 'wide');
-    this.bar.querySelectorAll('[data-view]').forEach((b) => b.classList.toggle('on', b.dataset.view === v));
+    const vb = this.bar.querySelector('[data-view]');
+    if (vb) { vb.innerHTML = icon(v === 'wide' ? 'file' : 'fit', 16); vb.title = v === 'wide' ? 'Switch to page view (like Word)' : 'Switch to full width (like Notepad)'; }
   }
 
   // ---------------------------------------------------------- find & replace

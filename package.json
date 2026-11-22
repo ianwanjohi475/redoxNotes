@@ -1,7 +1,7 @@
 {
   "name": "redox-notes",
   "private": true,
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "Fast daily work journal with auto-generated reports, rich notes and a whiteboard",
   "scripts": {
     "dev": "tauri dev",
