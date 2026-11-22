@@ -874,7 +874,9 @@ function openShortcuts() {
     ['Tab / Shift+Tab', 'Indent / outdent (lists, time log), next cell in tables'], ['Ctrl+1 / 2 / 3 / 0', 'Heading 1 / 2 / 3 / normal (notes)'], ['Ctrl+Shift+9', 'Checklist (notes)'],
     ['Ctrl+] / Ctrl+[', 'Bigger / smaller font (notes)'], ['Ctrl+L / E / R / J', 'Align left / center / right / justify (notes)'], ['Ctrl+K', 'Insert link (notes)'],
     ['Ctrl+F / Ctrl+H', 'Find / replace inside a note'], ['Ctrl+Shift+H', 'Highlight (notes)'], ['Ctrl+Shift+V', 'Paste as plain text (notes)'], ['Ctrl+Space', 'Clear formatting (notes)'],
-    ['V P H E L A R O T S', 'Whiteboard tools'], ['Space + drag', 'Pan the whiteboard'], ['Ctrl+scroll', 'Zoom the whiteboard'],
+    ['V H P M E', 'Whiteboard: select, hand, pen, marker, eraser'], ['R O D G L A', 'Whiteboard: rectangle, ellipse, diamond, triangle, line, arrow'],
+    ['T S I', 'Whiteboard: text, sticky note, image'], ['Space + drag', 'Pan the whiteboard'], ['Ctrl+scroll', 'Zoom the whiteboard'],
+    ['Ctrl+A / C / X / V / D', 'Whiteboard: select all, copy, cut, paste, duplicate'], ['Alt + drag', 'Whiteboard: duplicate while dragging'], ['Shift+1', 'Whiteboard: zoom to fit'],
   ];
   modal('Keyboard shortcuts', `<div class="shortcuts">${rows.map(([k, v]) => `<div><kbd>${k}</kbd><span>${v}</span></div>`).join('')}</div>`, { wide: true });
 }
@@ -983,7 +985,7 @@ function onKey(e) {
   }
   if (mod) {
     if (k === 'tab') { e.preventDefault(); cycleTab(e.shiftKey ? -1 : 1); return; }
-    if (k === 'd' && !e.shiftKey) { e.preventDefault(); actions.today(); return; }
+    if (k === 'd' && !e.shiftKey && !(S.editor instanceof Board && S.editor.sel.size)) { e.preventDefault(); actions.today(); return; }
     if (k === 'n') { e.preventDefault(); e.shiftKey ? newBoard() : newNote(); return; }
     if (k === 'r' && !e.shiftKey) { e.preventDefault(); openRange(); return; }
     if (k === 'w') { e.preventDefault(); if (S.active) closeTab(S.active); return; }

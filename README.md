@@ -46,8 +46,15 @@ daily log. You can export it to Word or PDF, or copy it as text.
 - **Export:** everything above carries over to Word (.docx) and PDF
 
 ### Whiteboard
-Pen, highlighter, lines, arrows, rectangles, ellipses, text, sticky notes and an eraser.
-You can also select and move items, zoom, pan, undo and redo. Boards export to PNG.
+- **Tools:** select, hand, pen, highlighter, eraser, rectangle, ellipse, diamond, triangle, line, arrow, text, sticky notes and images
+- **Styling:** stroke and fill colours (palettes plus custom), thickness, solid / dashed / dotted lines, arrowheads (none, one end or both ends), text size and opacity
+- **Shape labels:** double-click a shape to type inside it, which makes flowcharts quick to build
+- **Images:** paste with **Ctrl+V**, drag them in, or use the image tool
+- **Selecting:** box-select or Shift+click several items, drag the handles to resize, and use the arrow keys to nudge
+- **Editing:** **Ctrl+C / X / V / D** to copy, cut, paste and duplicate (Alt+drag duplicates too), bring to front or send to back, and a right-click menu
+- **Moving around:** pan with Space or the hand tool, zoom with **Ctrl+scroll**, and **Shift+1** zooms to fit. Backgrounds: dots, grid, lines or plain.
+- **Undo / redo**
+- **Export:** save a PNG, or **copy the board as an image** to paste into WhatsApp, Word or email
 
 ### Everything else
 - **Autosave** as you type. Your data is plain JSON files in `Documents\RedoxNotes`, so you can back up or sync the folder with OneDrive.
@@ -56,6 +63,15 @@ You can also select and move items, zoom, pan, undo and redo. Boards export to P
 - A **calendar** with a dot on each day that has a report, plus **search** across everything.
 - **Pin** and **duplicate** items. **Trash** keeps deleted items for 30 days.
 - **Backup / restore** everything to a single file (Settings).
+
+## Updating without losing anything
+
+Your notes are **not stored inside the app**. They live in `Documents\RedoxNotes`, so installing a new version never touches them.
+
+- **Installer:** download the new `RedoxNotes-x.y.z-setup.exe` and run it. It installs over the old version; you don't need to uninstall first.
+- **Portable:** close the app and replace the old `.exe` with the new one.
+- If you ever uninstall, `Documents\RedoxNotes` is left alone, even if you tick "delete application data".
+- **Extra safety:** go to Settings → **Back up everything** to save a single backup file. You can bring it back with **Restore from backup** on any PC.
 
 ## Keyboard shortcuts
 

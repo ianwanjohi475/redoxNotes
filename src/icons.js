@@ -60,6 +60,8 @@ const P = {
   grid: '<path d="M3 9h18M3 15h18M9 3v18M15 3v18"/>',
   zoomIn: '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5M11 8v6M8 11h6"/>',
   zoomOut: '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5M8 11h6"/>',
+  diamondShape: '<path d="M12 3 21 12 12 21 3 12z"/>',
+  triangle: '<path d="M12 4 21 20H3z"/>',
   minus: '<path d="M5 12h14"/>',
   alignLeft: '<path d="M4 6h16M4 10h10M4 14h16M4 18h10"/>',
   alignCenter: '<path d="M4 6h16M7 10h10M4 14h16M7 18h10"/>',
