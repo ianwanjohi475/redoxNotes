@@ -1,0 +1,11 @@
+{
+  "manifest_version": 3,
+  "name": "Customer List Extractor",
+  "version": "1.0.0",
+  "description": "Sidebar that collects the filtered Customers list (e.g. Expired + No internet) across every page: username, phone, package and expiry. Sort, copy and share.",
+  "permissions": ["sidePanel", "scripting", "activeTab", "storage", "tabs"],
+  "host_permissions": ["<all_urls>"],
+  "background": { "service_worker": "background.js" },
+  "side_panel": { "default_path": "sidepanel.html" },
+  "action": { "default_title": "Open Customer List Extractor" }
+}

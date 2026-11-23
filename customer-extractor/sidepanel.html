@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Customer List</title>
+  <link rel="stylesheet" href="sidepanel.css">
+</head>
+<body>
+  <header>
+    <h1>Customer List</h1>
+    <p class="hint">On CRM → Customers, set the filters (e.g. Status: <b>Expired</b>, Connection: <b>No internet</b>), then scan.</p>
+    <div class="row">
+      <button id="scanAll" class="primary">Scan all pages</button>
+      <button id="scanOne">This page only</button>
+      <button id="stop" hidden>Stop</button>
+    </div>
+    <div id="status" class="status"></div>
+    <div id="filters" class="filters"></div>
+  </header>
+
+  <section id="controls" hidden>
+    <div class="grid">
+      <label>Status
+        <select id="fStatus"></select>
+      </label>
+      <label>Connection
+        <select id="fOnline"></select>
+      </label>
+      <label>Package
+        <select id="fPackage"></select>
+      </label>
+      <label>Phone format
+        <select id="phoneFmt">
+          <option value="raw">As shown (2547…)</option>
+          <option value="local">Local (07…)</option>
+          <option value="plus">International (+254…)</option>
+        </select>
+      </label>
+    </div>
+    <input id="search" type="search" placeholder="Search username, phone, package…">
+    <div class="row small">
+      <label class="check"><input type="checkbox" id="incName"> Include name</label>
+      <label class="check"><input type="checkbox" id="dateOnly" checked> Expiry date only (no time)</label>
+    </div>
+    <div class="row">
+      <button id="copyText" class="primary">Copy list</button>
+      <button id="copyTsv">Copy for Excel</button>
+      <button id="csv">Download CSV</button>
+    </div>
+    <div id="count" class="count"></div>
+  </section>
+
+  <main>
+    <table id="tbl" hidden>
+      <thead>
+        <tr>
+          <th class="num">#</th>
+          <th data-key="username">Username</th>
+          <th data-key="name" class="col-name">Name</th>
+          <th data-key="phone">Phone</th>
+          <th data-key="package">Package</th>
+          <th data-key="expiry">Expiry</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </main>
+
+  <div id="toast" class="toast"></div>
+
+  <script src="scraper.js"></script>
+  <script src="sidepanel.js"></script>
+</body>
+</html>
