@@ -22,7 +22,7 @@ Connection **No internet**) from **every page** and shows it in a sidebar with
    - **Copy for Excel**: paste straight into Excel or Google Sheets
    - **Download CSV**
 
-Options: phone format (2547…, 07…, +254…), include the customer name, and show the expiry with or without the time.
+Options: phone format (default `0722 731 904`; also `0722731904`, `+254 722 731 904` or as in the CRM), include the customer name, and show the expiry with or without the time.
 
 ## Why it doesn't mix up fields
 Columns are matched by the table's header ids (`header-username`, `header-phone`,

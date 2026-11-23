@@ -6,7 +6,7 @@ const state = {
   rows: [],
   meta: null,
   sort: { key: 'expiry', dir: 'asc' },
-  prefs: { phoneFmt: 'raw', incName: false, dateOnly: true },
+  prefs: { v: 2, phoneFmt: 'local', incName: false, dateOnly: true },
   sel: { status: null, online: null, package: ALL },
   tabId: null,
 };
@@ -34,20 +34,23 @@ function expiryText(s) {
   return m ? m[1] : s;
 }
 
+// Kenyan numbers come in as 2547XXXXXXXX. Show them as 0722 731 904 by default:
+// easy to read and dial, and the spaces stop Excel dropping the leading 0.
 function phoneText(p) {
   const d = (p || '').replace(/\D/g, '');
   if (!d) return p || '';
-  const fmt = state.prefs.phoneFmt;
-  if (fmt === 'local') {
-    if (d.startsWith('254') && d.length === 12) return '0' + d.slice(3);
-    return d.length === 9 ? '0' + d : p;
+  let local = null; // 9 digits after the country code, e.g. 722731904
+  if (d.startsWith('254') && d.length === 12) local = d.slice(3);
+  else if (d.startsWith('0') && d.length === 10) local = d.slice(1);
+  else if (d.length === 9 && /^[17]/.test(d)) local = d;
+  if (!local) return p;
+  const spaced = (x) => x.slice(0, 3) + ' ' + x.slice(3, 6) + ' ' + x.slice(6);
+  switch (state.prefs.phoneFmt) {
+    case 'localPlain': return '0' + local;
+    case 'plus': return '+254 ' + spaced(local);
+    case 'raw': return p;
+    default: return '0' + spaced(local); // 'local'
   }
-  if (fmt === 'plus') {
-    if (d.startsWith('254')) return '+' + d;
-    if (d.startsWith('0') && d.length === 10) return '+254' + d.slice(1);
-    return p;
-  }
-  return p;
 }
 
 // Natural compare so VTL000019 < VTL000083 and "8Mbps" < "16Mbps"
@@ -82,12 +85,19 @@ function setStatus(msg, kind) {
 // ---------- view ----------
 function visibleRows() {
   const q = $('search').value.trim().toLowerCase();
+  const qDigits = q.replace(/[\s+-]/g, '');
+  const phoneHit = (r) => {
+    if (!/^\d{3,}$/.test(qDigits)) return false;
+    const d = r.phone.replace(/\D/g, '');
+    const last9 = d.slice(-9);
+    return d.includes(qDigits) || ('0' + last9).includes(qDigits) || ('254' + last9).includes(qDigits);
+  };
   const { status, online, package: pkg } = state.sel;
   let rows = state.rows.filter((r) =>
     (status === ALL || r.status === status) &&
     (online === ALL || r.online === online) &&
     (pkg === ALL || r.package === pkg) &&
-    (!q || [r.username, r.name, r.phone, phoneText(r.phone), r.package, r.expiry].join(' ').toLowerCase().includes(q))
+    (!q || phoneHit(r) || [r.username, r.name, r.phone, phoneText(r.phone), r.package, r.expiry].join(' ').toLowerCase().includes(q))
   );
   const { key, dir } = state.sort;
   const mul = dir === 'asc' ? 1 : -1;
@@ -314,7 +324,8 @@ function save() {
 async function load() {
   try {
     const d = await chrome.storage.local.get(['ceData', 'cePrefs', 'ceSort']);
-    if (d.cePrefs) Object.assign(state.prefs, d.cePrefs);
+    if (d.cePrefs && d.cePrefs.v === 2) Object.assign(state.prefs, d.cePrefs);
+    else if (d.cePrefs) Object.assign(state.prefs, d.cePrefs, { v: 2, phoneFmt: 'local' });
     if (d.ceSort) state.sort = d.ceSort;
     if (d.ceData && d.ceData.rows) {
       state.rows = d.ceData.rows.map((x) => Object.assign(x, { _exp: parseExpiry(x.expiry) }));
